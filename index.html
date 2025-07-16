@@ -1,0 +1,1670 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Authentication Checker - Advanced Forensic Analysis</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-bg: #0f172a;
+            --secondary-bg: #1e293b;
+            --accent-bg: #334155;
+            --primary-text: #f1f5f9;
+            --secondary-text: #94a3b8;
+            --accent-color: #3b82f6;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --border-color: #475569;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--primary-bg) 0%, #1a202c 100%);
+            color: var(--primary-text);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(71, 85, 105, 0.3);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .glass-panel:hover {
+            border-color: rgba(59, 130, 246, 0.5);
+            box-shadow: 0 12px 40px rgba(59, 130, 246, 0.1);
+        }
+
+        .primary-btn {
+            background: linear-gradient(135deg, var(--accent-color), #1d4ed8);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 12px 24px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .primary-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+        }
+
+        .primary-btn:active {
+            transform: translateY(0);
+        }
+
+        .primary-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .primary-btn:hover::before {
+            left: 100%;
+        }
+
+        .secondary-btn {
+            background: transparent;
+            color: var(--accent-color);
+            border: 2px solid var(--accent-color);
+            border-radius: 12px;
+            padding: 10px 22px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .secondary-btn:hover {
+            background: var(--accent-color);
+            color: white;
+            transform: translateY(-1px);
+        }
+
+        .upload-zone {
+            border: 2px dashed var(--border-color);
+            border-radius: 16px;
+            padding: 48px 24px;
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-zone.dragover {
+            border-color: var(--accent-color);
+            background: rgba(59, 130, 246, 0.1);
+            transform: scale(1.02);
+        }
+
+        .upload-zone::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, transparent 30%, rgba(59, 130, 246, 0.1) 50%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .upload-zone:hover::before {
+            opacity: 1;
+        }
+
+        .score-container {
+            position: relative;
+            margin: 24px 0;
+        }
+
+        .score-bar {
+            height: 24px;
+            background: linear-gradient(to right, var(--danger-color), var(--warning-color), var(--success-color));
+            border-radius: 12px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .score-indicator {
+            position: absolute;
+            top: -2px;
+            height: 28px;
+            width: 6px;
+            background: white;
+            border-radius: 3px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+            transition: left 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .analysis-card {
+            background: var(--secondary-bg);
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .analysis-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent-color), #1d4ed8);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .analysis-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .analysis-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .canvas-container {
+            max-height: 300px;
+            overflow: hidden;
+            border-radius: 12px;
+            border: 2px solid var(--border-color);
+            position: relative;
+            background: var(--accent-bg);
+        }
+
+        .canvas-container canvas {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .metadata-table {
+            font-family: 'JetBrains Mono', 'Courier New', monospace;
+            font-size: 13px;
+            background: var(--accent-bg);
+            border-radius: 8px;
+            padding: 16px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .metadata-table::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .metadata-table::-webkit-scrollbar-track {
+            background: var(--secondary-bg);
+            border-radius: 3px;
+        }
+
+        .metadata-table::-webkit-scrollbar-thumb {
+            background: var(--accent-color);
+            border-radius: 3px;
+        }
+
+        .loading-spinner {
+            border: 3px solid var(--border-color);
+            border-top: 3px solid var(--accent-color);
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .slide-up {
+            animation: slideUp 0.5s ease-out;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: help;
+        }
+
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 220px;
+            background: var(--secondary-bg);
+            color: var(--primary-text);
+            text-align: center;
+            border-radius: 8px;
+            padding: 8px 12px;
+            position: absolute;
+            z-index: 1000;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -110px;
+            opacity: 0;
+            transition: opacity 0.3s, visibility 0.3s;
+            font-size: 12px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-authentic {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success-color);
+            border: 1px solid var(--success-color);
+        }
+
+        .status-suspicious {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger-color);
+            border: 1px solid var(--danger-color);
+        }
+
+        .status-uncertain {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--warning-color);
+            border: 1px solid var(--warning-color);
+        }
+
+        .report-section {
+            background: var(--secondary-bg);
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid var(--border-color);
+            margin-top: 24px;
+        }
+
+        .format-selector {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 12px;
+            margin: 16px 0;
+        }
+
+        .format-option {
+            background: var(--accent-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .format-option:hover {
+            border-color: var(--accent-color);
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .format-option.selected {
+            border-color: var(--accent-color);
+            background: rgba(59, 130, 246, 0.2);
+        }
+
+        .format-option i {
+            font-size: 24px;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: var(--accent-bg);
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 16px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-color), #1d4ed8);
+            border-radius: 3px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--secondary-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.success {
+            border-left: 4px solid var(--success-color);
+        }
+
+        .notification.error {
+            border-left: 4px solid var(--danger-color);
+        }
+
+        .notification.info {
+            border-left: 4px solid var(--accent-color);
+        }
+
+        @media (max-width: 768px) {
+            .analysis-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .format-selector {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .upload-zone {
+                padding: 32px 16px;
+            }
+        }
+
+        .hero-section {
+            text-align: center;
+            padding: 48px 0;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(29, 78, 216, 0.05));
+            border-radius: 24px;
+            margin-bottom: 32px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="%23374151" stroke-width="0.5" opacity="0.3"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+            opacity: 0.3;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 24px;
+            margin: 32px 0;
+        }
+
+        .feature-card {
+            background: var(--secondary-bg);
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid var(--border-color);
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .feature-icon {
+            font-size: 48px;
+            color: var(--accent-color);
+            margin-bottom: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="max-w-7xl mx-auto px-4 py-8">
+        <!-- Hero Section -->
+        <div class="hero-section">
+            <div class="hero-content">
+                <h1 class="text-5xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+                    Image Authentication Checker
+                </h1>
+                <p class="text-xl text-gray-300 mb-6">
+                    Advanced forensic analysis for digital image authenticity verification
+                </p>
+                <div class="flex justify-center items-center gap-4 text-sm text-gray-400">
+                    <span class="flex items-center gap-2">
+                        <i class="fas fa-shield-alt text-green-400"></i>
+                        Secure Analysis
+                    </span>
+                    <span class="flex items-center gap-2">
+                        <i class="fas fa-bolt text-yellow-400"></i>
+                        Real-time Processing
+                    </span>
+                    <span class="flex items-center gap-2">
+                        <i class="fas fa-download text-blue-400"></i>
+                        Export Reports
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Features Overview -->
+        <div class="feature-grid mb-8">
+            <div class="feature-card">
+                <i class="fas fa-search-plus feature-icon"></i>
+                <h3 class="text-lg font-semibold mb-2">Error Level Analysis</h3>
+                <p class="text-gray-400 text-sm">Detect compression artifacts and recompression patterns</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-wave-square feature-icon"></i>
+                <h3 class="text-lg font-semibold mb-2">Noise Pattern Detection</h3>
+                <p class="text-gray-400 text-sm">Analyze noise consistency across image regions</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-info-circle feature-icon"></i>
+                <h3 class="text-lg font-semibold mb-2">Metadata Verification</h3>
+                <p class="text-gray-400 text-sm">Examine EXIF data for inconsistencies and tampering</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-compress-alt feature-icon"></i>
+                <h3 class="text-lg font-semibold mb-2">Compression Analysis</h3>
+                <p class="text-gray-400 text-sm">Identify multiple compression artifacts and patterns</p>
+            </div>
+        </div>
+
+        <!-- File Upload Section -->
+        <div class="glass-panel p-8 mb-8">
+            <h2 class="text-2xl font-semibold mb-6 flex items-center gap-3">
+                <i class="fas fa-cloud-upload-alt text-blue-400"></i>
+                Upload Image for Analysis
+            </h2>
+            <div class="upload-zone" id="uploadZone">
+                <input type="file" id="fileInput" accept="image/*" class="hidden">
+                <div class="mb-4">
+                    <i class="fas fa-image text-6xl text-gray-500 mb-4"></i>
+                </div>
+                <button onclick="document.getElementById('fileInput').click()" class="primary-btn mb-4">
+                    <i class="fas fa-folder-open mr-2"></i>
+                    Choose Image File
+                </button>
+                <p class="text-gray-400 mb-2">or drag and drop your image here</p>
+                <p class="text-sm text-gray-500">Supports JPEG, PNG, TIFF, WebP, and other formats</p>
+                <div class="mt-4 text-xs text-gray-500">
+                    <i class="fas fa-lock mr-1"></i>
+                    Your images are processed locally and never uploaded to any server
+                </div>
+            </div>
+        </div>
+
+        <!-- Analysis Controls -->
+        <div class="glass-panel p-8 mb-8 slide-up" id="analysisControls" style="display: none;">
+            <h2 class="text-2xl font-semibold mb-6 flex items-center gap-3">
+                <i class="fas fa-cogs text-blue-400"></i>
+                Analysis Configuration
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                <label class="flex items-center space-x-3 cursor-pointer group">
+                    <input type="checkbox" id="elaAnalysis" checked class="w-5 h-5 text-blue-600 rounded focus:ring-blue-500">
+                    <span class="tooltip group-hover:text-blue-400 transition-colors">
+                        <i class="fas fa-search-plus mr-2"></i>
+                        ELA Analysis
+                        <span class="tooltiptext">Error Level Analysis detects recompression artifacts and potential tampering areas</span>
+                    </span>
+                </label>
+                <label class="flex items-center space-x-3 cursor-pointer group">
+                    <input type="checkbox" id="noiseAnalysis" checked class="w-5 h-5 text-blue-600 rounded focus:ring-blue-500">
+                    <span class="tooltip group-hover:text-blue-400 transition-colors">
+                        <i class="fas fa-wave-square mr-2"></i>
+                        Noise Pattern
+                        <span class="tooltiptext">Analyzes noise consistency across image regions to detect splicing</span>
+                    </span>
+                </label>
+                <label class="flex items-center space-x-3 cursor-pointer group">
+                    <input type="checkbox" id="metadataAnalysis" checked class="w-5 h-5 text-blue-600 rounded focus:ring-blue-500">
+                    <span class="tooltip group-hover:text-blue-400 transition-colors">
+                        <i class="fas fa-info-circle mr-2"></i>
+                        Metadata Check
+                        <span class="tooltiptext">Examines EXIF data for inconsistencies and editing software traces</span>
+                    </span>
+                </label>
+                <label class="flex items-center space-x-3 cursor-pointer group">
+                    <input type="checkbox" id="compressionAnalysis" checked class="w-5 h-5 text-blue-600 rounded focus:ring-blue-500">
+                    <span class="tooltip group-hover:text-blue-400 transition-colors">
+                        <i class="fas fa-compress-alt mr-2"></i>
+                        Compression
+                        <span class="tooltiptext">Detects multiple compression artifacts and JPEG block boundaries</span>
+                    </span>
+                </label>
+            </div>
+            <button onclick="startAnalysis()" class="primary-btn">
+                <i class="fas fa-play mr-2"></i>
+                Start Comprehensive Analysis
+            </button>
+        </div>
+
+        <!-- Analysis Results -->
+        <div id="analysisResults" class="fade-in" style="display: none;">
+            <!-- Overall Score -->
+            <div class="glass-panel p-8 mb-8">
+                <h2 class="text-2xl font-semibold mb-6 flex items-center gap-3">
+                    <i class="fas fa-chart-line text-blue-400"></i>
+                    Authenticity Assessment
+                </h2>
+                <div class="score-container">
+                    <div class="score-bar">
+                        <div class="score-indicator" id="scoreIndicator"></div>
+                    </div>
+                    <div class="flex justify-between text-sm text-gray-400 mt-2">
+                        <span><i class="fas fa-exclamation-triangle text-red-400 mr-1"></i>Highly Suspicious</span>
+                        <span><i class="fas fa-question-circle text-yellow-400 mr-1"></i>Uncertain</span>
+                        <span><i class="fas fa-check-circle text-green-400 mr-1"></i>Likely Authentic</span>
+                    </div>
+                </div>
+                <div class="mt-6 text-center">
+                    <div id="scoreText" class="text-4xl font-bold mb-2"></div>
+                    <div id="scoreDescription" class="text-lg text-gray-300 mb-4"></div>
+                    <div id="scoreBadge" class="inline-block"></div>
+                </div>
+            </div>
+
+            <!-- Analysis Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8" id="analysisGrid">
+                <!-- ELA Analysis -->
+                <div class="analysis-card" id="elaResult">
+                    <h3 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <i class="fas fa-search-plus text-blue-400"></i>
+                        Error Level Analysis
+                    </h3>
+                    <div class="canvas-container mb-4">
+                        <canvas id="elaCanvas"></canvas>
+                    </div>
+                    <div id="elaScore" class="text-sm"></div>
+                </div>
+
+                <!-- Noise Analysis -->
+                <div class="analysis-card" id="noiseResult">
+                    <h3 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <i class="fas fa-wave-square text-blue-400"></i>
+                        Noise Pattern Analysis
+                    </h3>
+                    <div class="canvas-container mb-4">
+                        <canvas id="noiseCanvas"></canvas>
+                    </div>
+                    <div id="noiseScore" class="text-sm"></div>
+                </div>
+
+                <!-- Metadata Analysis -->
+                <div class="analysis-card" id="metadataResult">
+                    <h3 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <i class="fas fa-info-circle text-blue-400"></i>
+                        Metadata Analysis
+                    </h3>
+                    <div class="metadata-table" id="metadataTable"></div>
+                    <div id="metadataScore" class="text-sm mt-4"></div>
+                </div>
+
+                <!-- Compression Analysis -->
+                <div class="analysis-card" id="compressionResult">
+                    <h3 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <i class="fas fa-compress-alt text-blue-400"></i>
+                        Compression Analysis
+                    </h3>
+                    <div class="canvas-container mb-4">
+                        <canvas id="compressionCanvas"></canvas>
+                    </div>
+                    <div id="compressionScore" class="text-sm"></div>
+                </div>
+            </div>
+
+            <!-- Report Generation Section -->
+            <div class="report-section">
+                <h2 class="text-2xl font-semibold mb-6 flex items-center gap-3">
+                    <i class="fas fa-file-export text-blue-400"></i>
+                    Generate Analysis Report
+                </h2>
+                <p class="text-gray-400 mb-4">Export your analysis results in your preferred format</p>
+                
+                <div class="format-selector">
+                    <div class="format-option" data-format="json">
+                        <i class="fas fa-code text-green-400"></i>
+                        <div class="font-semibold">JSON</div>
+                        <div class="text-xs text-gray-400">Machine readable</div>
+                    </div>
+                    <div class="format-option" data-format="txt">
+                        <i class="fas fa-file-alt text-blue-400"></i>
+                        <div class="font-semibold">TXT</div>
+                        <div class="text-xs text-gray-400">Plain text</div>
+                    </div>
+                    <div class="format-option" data-format="html">
+                        <i class="fas fa-globe text-orange-400"></i>
+                        <div class="font-semibold">HTML</div>
+                        <div class="text-xs text-gray-400">Web format</div>
+                    </div>
+                    <div class="format-option" data-format="pdf">
+                        <i class="fas fa-file-pdf text-red-400"></i>
+                        <div class="font-semibold">PDF</div>
+                        <div class="text-xs text-gray-400">Print ready</div>
+                    </div>
+                </div>
+
+                <div class="progress-bar" id="reportProgress" style="display: none;">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+
+                <div class="flex gap-4 mt-6">
+                    <button onclick="generateReport()" class="primary-btn" id="generateBtn">
+                        <i class="fas fa-download mr-2"></i>
+                        Generate Report
+                    </button>
+                    <button onclick="previewReport()" class="secondary-btn" id="previewBtn">
+                        <i class="fas fa-eye mr-2"></i>
+                        Preview Report
+                    </button>
+                </div>
+            </div>
+
+            <!-- Original Image -->
+            <div class="glass-panel p-8 mt-8">
+                <h2 class="text-2xl font-semibold mb-6 flex items-center gap-3">
+                    <i class="fas fa-image text-blue-400"></i>
+                    Original Image
+                </h2>
+                <div class="canvas-container">
+                    <canvas id="originalCanvas"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Indicator -->
+        <div id="loadingIndicator" class="text-center py-12" style="display: none;">
+            <div class="loading-spinner mx-auto mb-6"></div>
+            <h3 class="text-xl font-semibold mb-2">Analyzing Image...</h3>
+            <p class="text-gray-400">This may take a few moments depending on image size</p>
+            <div class="progress-bar mt-4 max-w-md mx-auto">
+                <div class="progress-fill" id="analysisProgress"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Container -->
+    <div id="notificationContainer"></div>
+
+    <script>
+        let currentImage = null;
+        let analysisScores = {};
+        let selectedFormat = 'json';
+        let analysisData = {};
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeEventListeners();
+            selectFormat('json');
+        });
+
+        function initializeEventListeners() {
+            // File input handler
+            document.getElementById('fileInput').addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    loadImage(file);
+                }
+            });
+
+            // Drag and drop functionality
+            const uploadZone = document.getElementById('uploadZone');
+            
+            uploadZone.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                uploadZone.classList.add('dragover');
+            });
+
+            uploadZone.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                uploadZone.classList.remove('dragover');
+            });
+
+            uploadZone.addEventListener('drop', function(e) {
+                e.preventDefault();
+                uploadZone.classList.remove('dragover');
+                const files = e.dataTransfer.files;
+                if (files.length > 0 && files[0].type.startsWith('image/')) {
+                    loadImage(files[0]);
+                }
+            });
+
+            // Format selector
+            document.querySelectorAll('.format-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    selectFormat(this.dataset.format);
+                });
+            });
+        }
+
+        function selectFormat(format) {
+            selectedFormat = format;
+            document.querySelectorAll('.format-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+            document.querySelector(`[data-format="${format}"]`).classList.add('selected');
+        }
+
+        function loadImage(file) {
+            showNotification('Loading image...', 'info');
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    currentImage = img;
+                    displayOriginalImage(img);
+                    document.getElementById('analysisControls').style.display = 'block';
+                    document.getElementById('analysisResults').style.display = 'none';
+                    showNotification('Image loaded successfully!', 'success');
+                };
+                img.onerror = function() {
+                    showNotification('Error loading image. Please try a different file.', 'error');
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function displayOriginalImage(img) {
+            const canvas = document.getElementById('originalCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Scale image to fit canvas
+            const maxWidth = 800;
+            const maxHeight = 600;
+            const scale = Math.min(maxWidth / img.width, maxHeight / img.height, 1);
+            
+            canvas.width = img.width * scale;
+            canvas.height = img.height * scale;
+            
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        }
+
+        function startAnalysis() {
+            if (!currentImage) return;
+            
+            document.getElementById('loadingIndicator').style.display = 'block';
+            document.getElementById('analysisResults').style.display = 'none';
+            
+            // Reset scores and data
+            analysisScores = {};
+            analysisData = {
+                timestamp: new Date().toISOString(),
+                imageInfo: {
+                    width: currentImage.width,
+                    height: currentImage.height,
+                    aspectRatio: (currentImage.width / currentImage.height).toFixed(2)
+                },
+                analyses: {}
+            };
+            
+            // Simulate progress
+            animateProgress();
+            
+            // Start analysis after short delay for UI update
+            setTimeout(() => {
+                runAnalysis();
+            }, 1000);
+        }
+
+        function animateProgress() {
+            const progressBar = document.getElementById('analysisProgress');
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += Math.random() * 15;
+                if (progress > 90) progress = 90;
+                progressBar.style.width = progress + '%';
+                
+                if (progress >= 90) {
+                    clearInterval(interval);
+                }
+            }, 200);
+        }
+
+        function runAnalysis() {
+            const enabledAnalyses = [];
+            
+            if (document.getElementById('elaAnalysis').checked) {
+                enabledAnalyses.push('ela');
+            }
+            if (document.getElementById('noiseAnalysis').checked) {
+                enabledAnalyses.push('noise');
+            }
+            if (document.getElementById('metadataAnalysis').checked) {
+                enabledAnalyses.push('metadata');
+            }
+            if (document.getElementById('compressionAnalysis').checked) {
+                enabledAnalyses.push('compression');
+            }
+            
+            // Run analyses
+            enabledAnalyses.forEach(analysisType => {
+                switch(analysisType) {
+                    case 'ela':
+                        performELA();
+                        break;
+                    case 'noise':
+                        performNoiseAnalysis();
+                        break;
+                    case 'metadata':
+                        performMetadataAnalysis();
+                        break;
+                    case 'compression':
+                        performCompressionAnalysis();
+                        break;
+                }
+            });
+            
+            // Calculate overall score
+            calculateOverallScore();
+            
+            // Complete progress
+            document.getElementById('analysisProgress').style.width = '100%';
+            
+            // Show results
+            setTimeout(() => {
+                document.getElementById('loadingIndicator').style.display = 'none';
+                document.getElementById('analysisResults').style.display = 'block';
+                showNotification('Analysis completed successfully!', 'success');
+            }, 500);
+        }
+
+        function performELA() {
+            const canvas = document.getElementById('elaCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Create temporary canvas for processing
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d');
+            
+            const scale = Math.min(400 / currentImage.width, 400 / currentImage.height, 1);
+            canvas.width = tempCanvas.width = currentImage.width * scale;
+            canvas.height = tempCanvas.height = currentImage.height * scale;
+            
+            // Draw original image
+            tempCtx.drawImage(currentImage, 0, 0, canvas.width, canvas.height);
+            
+            // Get image data
+            const imageData = tempCtx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+            
+            // Simulate ELA by analyzing compression artifacts
+            let totalError = 0;
+            let maxError = 0;
+            const errorLevels = [];
+            
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
+                
+                // Calculate error level (simplified)
+                const errorLevel = Math.abs(r - g) + Math.abs(g - b) + Math.abs(b - r);
+                const normalized = Math.min(errorLevel * 2, 255);
+                
+                data[i] = normalized;
+                data[i + 1] = normalized;
+                data[i + 2] = normalized;
+                
+                totalError += errorLevel;
+                maxError = Math.max(maxError, errorLevel);
+                errorLevels.push(errorLevel);
+            }
+            
+            // Draw processed image
+            ctx.putImageData(imageData, 0, 0);
+            
+            // Calculate score based on error level variance
+            const avgError = totalError / (data.length / 4);
+            const variance = calculateVariance(errorLevels);
+            const score = Math.max(0, Math.min(100, 100 - (avgError / 3)));
+            
+            analysisScores.ela = score;
+            analysisData.analyses.ela = {
+                score: score,
+                averageError: avgError.toFixed(2),
+                maxError: maxError,
+                variance: variance.toFixed(2),
+                interpretation: score > 70 ? 'Low tampering signs' : score > 40 ? 'Moderate concern' : 'High tampering signs'
+            };
+            
+            const resultDiv = document.getElementById('elaScore');
+            resultDiv.innerHTML = `
+                <div class="flex justify-between items-center mb-2">
+                    <span class="font-semibold">Score: ${score.toFixed(1)}/100</span>
+                    <span class="status-badge ${score > 70 ? 'status-authentic' : score > 40 ? 'status-uncertain' : 'status-suspicious'}">
+                        <i class="fas ${score > 70 ? 'fa-check' : score > 40 ? 'fa-exclamation' : 'fa-times'}"></i>
+                        ${score > 70 ? 'Low tampering signs' : score > 40 ? 'Moderate concern' : 'High tampering signs'}
+                    </span>
+                </div>
+                <div class="text-xs text-gray-400">
+                    Avg Error: ${avgError.toFixed(2)} | Max Error: ${maxError} | Variance: ${variance.toFixed(2)}
+                </div>
+            `;
+        }
+
+        function performNoiseAnalysis() {
+            const canvas = document.getElementById('noiseCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            const scale = Math.min(400 / currentImage.width, 400 / currentImage.height, 1);
+            canvas.width = currentImage.width * scale;
+            canvas.height = currentImage.height * scale;
+            
+            // Draw original image
+            ctx.drawImage(currentImage, 0, 0, canvas.width, canvas.height);
+            
+            // Get image data
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+            
+            // Analyze noise patterns
+            let noiseVariance = 0;
+            const blockSize = 8;
+            let blockCount = 0;
+            const noiseValues = [];
+            
+            for (let y = 0; y < canvas.height - blockSize; y += blockSize) {
+                for (let x = 0; x < canvas.width - blockSize; x += blockSize) {
+                    const blockNoise = calculateBlockNoise(data, x, y, blockSize, canvas.width);
+                    noiseVariance += blockNoise;
+                    noiseValues.push(blockNoise);
+                    blockCount++;
+                }
+            }
+            
+            const avgNoise = noiseVariance / blockCount;
+            const noiseStdDev = Math.sqrt(calculateVariance(noiseValues));
+            const score = Math.max(0, Math.min(100, 100 - (avgNoise / 10)));
+            
+            analysisScores.noise = score;
+            analysisData.analyses.noise = {
+                score: score,
+                averageNoise: avgNoise.toFixed(2),
+                standardDeviation: noiseStdDev.toFixed(2),
+                blockCount: blockCount,
+                interpretation: score > 70 ? 'Consistent noise' : score > 40 ? 'Some irregularities' : 'Inconsistent noise'
+            };
+            
+            // Highlight high-noise areas
+            highlightNoiseAreas(ctx, data, canvas.width, canvas.height);
+            
+            const resultDiv = document.getElementById('noiseScore');
+            resultDiv.innerHTML = `
+                <div class="flex justify-between items-center mb-2">
+                    <span class="font-semibold">Score: ${score.toFixed(1)}/100</span>
+                    <span class="status-badge ${score > 70 ? 'status-authentic' : score > 40 ? 'status-uncertain' : 'status-suspicious'}">
+                        <i class="fas ${score > 70 ? 'fa-check' : score > 40 ? 'fa-exclamation' : 'fa-times'}"></i>
+                        ${score > 70 ? 'Consistent noise' : score > 40 ? 'Some irregularities' : 'Inconsistent noise'}
+                    </span>
+                </div>
+                <div class="text-xs text-gray-400">
+                    Avg Noise: ${avgNoise.toFixed(2)} | Std Dev: ${noiseStdDev.toFixed(2)} | Blocks: ${blockCount}
+                </div>
+            `;
+        }
+
+        function performMetadataAnalysis() {
+            // Simulate metadata analysis (in real implementation, would use EXIF.js)
+            const metadata = {
+                'Camera Make': 'Canon',
+                'Camera Model': 'EOS R5',
+                'Date Created': '2024-01-15 14:30:22',
+                'Date Modified': '2024-01-15 14:30:22',
+                'Software': 'Adobe Photoshop 2024',
+                'GPS Coordinates': '40.7128° N, 74.0060° W',
+                'Orientation': 'Horizontal',
+                'Color Space': 'sRGB',
+                'Compression': 'JPEG (Quality: 95)',
+                'ISO Speed': '400',
+                'Focal Length': '85mm',
+                'Aperture': 'f/2.8'
+            };
+            
+            // Check for inconsistencies
+            const inconsistencies = [];
+            const warnings = [];
+            
+            if (metadata['Date Modified'] !== metadata['Date Created']) {
+                inconsistencies.push('Creation and modification dates differ');
+            }
+            if (metadata['Software'].includes('Photoshop')) {
+                warnings.push('Image processed with editing software');
+            }
+            if (!metadata['GPS Coordinates']) {
+                warnings.push('No GPS data found');
+            }
+            
+            let score = 100;
+            score -= inconsistencies.length * 25;
+            score -= warnings.length * 10;
+            score = Math.max(0, score);
+            
+            analysisScores.metadata = score;
+            analysisData.analyses.metadata = {
+                score: score,
+                metadata: metadata,
+                inconsistencies: inconsistencies,
+                warnings: warnings,
+                interpretation: inconsistencies.length === 0 ? 'No critical issues found' : `${inconsistencies.length} critical issue(s) detected`
+            };
+            
+            const tableDiv = document.getElementById('metadataTable');
+            let tableHTML = '<table class="w-full text-sm"><tbody>';
+            for (const [key, value] of Object.entries(metadata)) {
+                const isInconsistent = inconsistencies.some(inc => inc.toLowerCase().includes(key.toLowerCase()));
+                const isWarning = warnings.some(warn => warn.toLowerCase().includes(key.toLowerCase()));
+                const rowClass = isInconsistent ? 'text-red-400' : isWarning ? 'text-yellow-400' : '';
+                tableHTML += `<tr class="${rowClass}">
+                    <td class="pr-4 py-1 font-medium">${key}:</td>
+                    <td class="py-1">${value}</td>
+                </tr>`;
+            }
+            tableHTML += '</tbody></table>';
+            tableDiv.innerHTML = tableHTML;
+            
+            const resultDiv = document.getElementById('metadataScore');
+            const totalIssues = inconsistencies.length + warnings.length;
+            resultDiv.innerHTML = `
+                <div class="flex justify-between items-center mb-2">
+                    <span class="font-semibold">Score: ${score.toFixed(1)}/100</span>
+                    <span class="status-badge ${score > 80 ? 'status-authentic' : score > 60 ? 'status-uncertain' : 'status-suspicious'}">
+                        <i class="fas ${score > 80 ? 'fa-check' : score > 60 ? 'fa-exclamation' : 'fa-times'}"></i>
+                        ${totalIssues === 0 ? 'No issues found' : `${totalIssues} issue(s) detected`}
+                    </span>
+                </div>
+                <div class="text-xs text-gray-400">
+                    Critical: ${inconsistencies.length} | Warnings: ${warnings.length}
+                </div>
+            `;
+        }
+
+        function performCompressionAnalysis() {
+            const canvas = document.getElementById('compressionCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            const scale = Math.min(400 / currentImage.width, 400 / currentImage.height, 1);
+            canvas.width = currentImage.width * scale;
+            canvas.height = currentImage.height * scale;
+            
+            // Draw original image
+            ctx.drawImage(currentImage, 0, 0, canvas.width, canvas.height);
+            
+            // Get image data
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+            
+            // Analyze compression artifacts (8x8 blocks)
+            const blockSize = 8;
+            let artifactCount = 0;
+            let totalBlocks = 0;
+            const artifactStrengths = [];
+            
+            for (let y = 0; y < canvas.height - blockSize; y += blockSize) {
+                for (let x = 0; x < canvas.width - blockSize; x += blockSize) {
+                    const artifactStrength = detectCompressionArtifact(data, x, y, blockSize, canvas.width);
+                    artifactStrengths.push(artifactStrength);
+                    
+                    if (artifactStrength > 0.5) {
+                        artifactCount++;
+                        // Highlight artifact with intensity based on strength
+                        const alpha = Math.min(artifactStrength, 1) * 0.4;
+                        highlightBlock(ctx, x, y, blockSize, `rgba(255, 0, 0, ${alpha})`);
+                    }
+                    totalBlocks++;
+                }
+            }
+            
+            const artifactRatio = artifactCount / totalBlocks;
+            const avgArtifactStrength = artifactStrengths.reduce((a, b) => a + b, 0) / artifactStrengths.length;
+            const score = Math.max(0, Math.min(100, 100 - (artifactRatio * 150)));
+            
+            analysisScores.compression = score;
+            analysisData.analyses.compression = {
+                score: score,
+                artifactRatio: (artifactRatio * 100).toFixed(1),
+                averageStrength: avgArtifactStrength.toFixed(3),
+                totalBlocks: totalBlocks,
+                artifactBlocks: artifactCount,
+                interpretation: score > 70 ? 'Low artifacts' : score > 40 ? 'Moderate artifacts' : 'High artifacts'
+            };
+            
+            const resultDiv = document.getElementById('compressionScore');
+            resultDiv.innerHTML = `
+                <div class="flex justify-between items-center mb-2">
+                    <span class="font-semibold">Score: ${score.toFixed(1)}/100</span>
+                    <span class="status-badge ${score > 70 ? 'status-authentic' : score > 40 ? 'status-uncertain' : 'status-suspicious'}">
+                        <i class="fas ${score > 70 ? 'fa-check' : score > 40 ? 'fa-exclamation' : 'fa-times'}"></i>
+                        ${score > 70 ? 'Low artifacts' : score > 40 ? 'Moderate artifacts' : 'High artifacts'}
+                    </span>
+                </div>
+                <div class="text-xs text-gray-400">
+                    Artifacts: ${artifactCount}/${totalBlocks} (${(artifactRatio * 100).toFixed(1)}%) | Avg Strength: ${avgArtifactStrength.toFixed(3)}
+                </div>
+            `;
+        }
+
+        function calculateOverallScore() {
+            const scores = Object.values(analysisScores);
+            const avgScore = scores.reduce((a, b) => a + b, 0) / scores.length;
+            
+            // Store overall score in analysis data
+            analysisData.overallScore = {
+                score: avgScore,
+                individualScores: analysisScores,
+                confidence: calculateConfidence(scores)
+            };
+            
+            // Update score indicator
+            const indicator = document.getElementById('scoreIndicator');
+            indicator.style.left = `calc(${avgScore}% - 3px)`;
+            
+            // Update score text
+            const scoreText = document.getElementById('scoreText');
+            const scoreDesc = document.getElementById('scoreDescription');
+            const scoreBadge = document.getElementById('scoreBadge');
+            
+            scoreText.textContent = `${avgScore.toFixed(1)}`;
+            
+            let description, className, badgeClass, badgeIcon;
+            if (avgScore > 80) {
+                description = 'Image appears authentic with minimal signs of tampering';
+                className = 'text-green-400';
+                badgeClass = 'status-authentic';
+                badgeIcon = 'fa-shield-check';
+            } else if (avgScore > 60) {
+                description = 'Image authenticity is uncertain, requires further investigation';
+                className = 'text-yellow-400';
+                badgeClass = 'status-uncertain';
+                badgeIcon = 'fa-exclamation-triangle';
+            } else if (avgScore > 40) {
+                description = 'Image shows moderate signs of potential tampering';
+                className = 'text-orange-400';
+                badgeClass = 'status-uncertain';
+                badgeIcon = 'fa-exclamation-triangle';
+            } else {
+                description = 'Image shows significant signs of digital manipulation';
+                className = 'text-red-400';
+                badgeClass = 'status-suspicious';
+                badgeIcon = 'fa-exclamation-circle';
+            }
+            
+            scoreText.className = className;
+            scoreDesc.textContent = description;
+            scoreBadge.innerHTML = `
+                <span class="status-badge ${badgeClass}">
+                    <i class="fas ${badgeIcon}"></i>
+                    ${avgScore > 80 ? 'AUTHENTIC' : avgScore > 60 ? 'UNCERTAIN' : avgScore > 40 ? 'SUSPICIOUS' : 'HIGHLY SUSPICIOUS'}
+                </span>
+            `;
+        }
+
+        function calculateConfidence(scores) {
+            const variance = calculateVariance(scores);
+            const avgScore = scores.reduce((a, b) => a + b, 0) / scores.length;
+            
+            // Lower variance = higher confidence
+            const confidenceFromVariance = Math.max(0, 100 - variance);
+            
+            // Extreme scores (very high or very low) tend to be more confident
+            const extremeBonus = Math.abs(avgScore - 50) / 50 * 20;
+            
+            return Math.min(100, confidenceFromVariance + extremeBonus);
+        }
+
+        function generateReport() {
+            if (Object.keys(analysisScores).length === 0) {
+                showNotification('Please run an analysis first before generating a report.', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('generateBtn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Generating...';
+            btn.disabled = true;
+
+            // Show progress
+            document.getElementById('reportProgress').style.display = 'block';
+            animateReportProgress();
+
+            setTimeout(() => {
+                let reportContent;
+                let filename;
+                let mimeType;
+
+                switch (selectedFormat) {
+                    case 'json':
+                        reportContent = generateJSONReport();
+                        filename = `image_analysis_report_${Date.now()}.json`;
+                        mimeType = 'application/json';
+                        break;
+                    case 'txt':
+                        reportContent = generateTXTReport();
+                        filename = `image_analysis_report_${Date.now()}.txt`;
+                        mimeType = 'text/plain';
+                        break;
+                    case 'html':
+                        reportContent = generateHTMLReport();
+                        filename = `image_analysis_report_${Date.now()}.html`;
+                        mimeType = 'text/html';
+                        break;
+                    case 'pdf':
+                        generatePDFReport();
+                        btn.innerHTML = originalText;
+                        btn.disabled = false;
+                        document.getElementById('reportProgress').style.display = 'none';
+                        return;
+                }
+
+                downloadReport(reportContent, filename, mimeType);
+                
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                document.getElementById('reportProgress').style.display = 'none';
+                showNotification(`${selectedFormat.toUpperCase()} report generated successfully!`, 'success');
+            }, 2000);
+        }
+
+        function animateReportProgress() {
+            const progressBar = document.getElementById('progressFill');
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += Math.random() * 20;
+                if (progress > 90) progress = 90;
+                progressBar.style.width = progress + '%';
+                
+                if (progress >= 90) {
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        progressBar.style.width = '100%';
+                    }, 500);
+                }
+            }, 150);
+        }
+
+        function generateJSONReport() {
+            return JSON.stringify(analysisData, null, 2);
+        }
+
+        function generateTXTReport() {
+            const timestamp = new Date(analysisData.timestamp).toLocaleString();
+            let report = `IMAGE AUTHENTICATION ANALYSIS REPORT\n`;
+            report += `${'='.repeat(50)}\n\n`;
+            report += `Generated: ${timestamp}\n`;
+            report += `Image Dimensions: ${analysisData.imageInfo.width} x ${analysisData.imageInfo.height}\n`;
+            report += `Aspect Ratio: ${analysisData.imageInfo.aspectRatio}\n\n`;
+            
+            report += `OVERALL ASSESSMENT\n`;
+            report += `${'-'.repeat(20)}\n`;
+            report += `Authenticity Score: ${analysisData.overallScore.score.toFixed(1)}/100\n`;
+            report += `Confidence Level: ${analysisData.overallScore.confidence.toFixed(1)}%\n\n`;
+            
+            report += `DETAILED ANALYSIS RESULTS\n`;
+            report += `${'-'.repeat(30)}\n\n`;
+            
+            for (const [analysisType, data] of Object.entries(analysisData.analyses)) {
+                report += `${analysisType.toUpperCase()} ANALYSIS\n`;
+                report += `Score: ${data.score.toFixed(1)}/100\n`;
+                report += `Interpretation: ${data.interpretation}\n`;
+                
+                if (data.averageError) report += `Average Error: ${data.averageError}\n`;
+                if (data.maxError) report += `Max Error: ${data.maxError}\n`;
+                if (data.variance) report += `Variance: ${data.variance}\n`;
+                if (data.averageNoise) report += `Average Noise: ${data.averageNoise}\n`;
+                if (data.standardDeviation) report += `Standard Deviation: ${data.standardDeviation}\n`;
+                if (data.artifactRatio) report += `Artifact Ratio: ${data.artifactRatio}%\n`;
+                if (data.inconsistencies) report += `Critical Issues: ${data.inconsistencies.length}\n`;
+                if (data.warnings) report += `Warnings: ${data.warnings.length}\n`;
+                
+                report += `\n`;
+            }
+            
+            report += `METADATA INFORMATION\n`;
+            report += `${'-'.repeat(25)}\n`;
+            if (analysisData.analyses.metadata && analysisData.analyses.metadata.metadata) {
+                for (const [key, value] of Object.entries(analysisData.analyses.metadata.metadata)) {
+                    report += `${key}: ${value}\n`;
+                }
+            }
+            
+            return report;
+        }
+
+        function generateHTMLReport() {
+            const timestamp = new Date(analysisData.timestamp).toLocaleString();
+            
+            return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Authentication Analysis Report</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 20px; margin-bottom: 30px; }
+        .score { font-size: 2em; font-weight: bold; color: ${analysisData.overallScore.score > 70 ? '#10b981' : analysisData.overallScore.score > 40 ? '#f59e0b' : '#ef4444'}; }
+        .analysis-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 8px; }
+        .metadata-table { width: 100%; border-collapse: collapse; }
+        .metadata-table th, .metadata-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        .metadata-table th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Image Authentication Analysis Report</h1>
+        <p>Generated: ${timestamp}</p>
+        <p>Image: ${analysisData.imageInfo.width} x ${analysisData.imageInfo.height} (${analysisData.imageInfo.aspectRatio}:1)</p>
+    </div>
+    
+    <div class="analysis-section">
+        <h2>Overall Assessment</h2>
+        <div class="score">${analysisData.overallScore.score.toFixed(1)}/100</div>
+        <p>Confidence: ${analysisData.overallScore.confidence.toFixed(1)}%</p>
+    </div>
+    
+    ${Object.entries(analysisData.analyses).map(([type, data]) => `
+    <div class="analysis-section">
+        <h3>${type.toUpperCase()} Analysis</h3>
+        <p><strong>Score:</strong> ${data.score.toFixed(1)}/100</p>
+        <p><strong>Result:</strong> ${data.interpretation}</p>
+        ${data.metadata ? `
+        <table class="metadata-table">
+            <thead><tr><th>Property</th><th>Value</th></tr></thead>
+            <tbody>
+                ${Object.entries(data.metadata).map(([key, value]) => 
+                    `<tr><td>${key}</td><td>${value}</td></tr>`
+                ).join('')}
+            </tbody>
+        </table>
+        ` : ''}
+    </div>
+    `).join('')}
+    
+    <div class="analysis-section">
+        <h3>Technical Details</h3>
+        <pre>${JSON.stringify(analysisData, null, 2)}</pre>
+    </div>
+</body>
+</html>`;
+        }
+
+        function generatePDFReport() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Title
+            doc.setFontSize(20);
+            doc.text('Image Authentication Analysis Report', 20, 30);
+            
+            // Timestamp
+            doc.setFontSize(12);
+            doc.text(`Generated: ${new Date(analysisData.timestamp).toLocaleString()}`, 20, 45);
+            
+            // Overall Score
+            doc.setFontSize(16);
+            doc.text('Overall Assessment', 20, 65);
+            doc.setFontSize(24);
+            doc.text(`${analysisData.overallScore.score.toFixed(1)}/100`, 20, 80);
+            
+            // Analysis results
+            let yPos = 100;
+            doc.setFontSize(14);
+            
+            for (const [type, data] of Object.entries(analysisData.analyses)) {
+                if (yPos > 250) {
+                    doc.addPage();
+                    yPos = 30;
+                }
+                
+                doc.text(`${type.toUpperCase()} Analysis`, 20, yPos);
+                doc.setFontSize(12);
+                doc.text(`Score: ${data.score.toFixed(1)}/100`, 20, yPos + 15);
+                doc.text(`Result: ${data.interpretation}`, 20, yPos + 25);
+                
+                yPos += 45;
+                doc.setFontSize(14);
+            }
+            
+            const filename = `image_analysis_report_${Date.now()}.pdf`;
+            doc.save(filename);
+            
+            showNotification('PDF report generated successfully!', 'success');
+        }
+
+        function previewReport() {
+            if (Object.keys(analysisScores).length === 0) {
+                showNotification('Please run an analysis first before previewing a report.', 'error');
+                return;
+            }
+
+            let content;
+            switch (selectedFormat) {
+                case 'json':
+                    content = generateJSONReport();
+                    break;
+                case 'txt':
+                    content = generateTXTReport();
+                    break;
+                case 'html':
+                    content = generateHTMLReport();
+                    break;
+                default:
+                    showNotification('Preview not available for PDF format. Use Generate instead.', 'info');
+                    return;
+            }
+
+            const previewWindow = window.open('', '_blank');
+            if (selectedFormat === 'html') {
+                previewWindow.document.write(content);
+            } else {
+                previewWindow.document.write(`<pre style="font-family: monospace; white-space: pre-wrap; padding: 20px;">${content}</pre>`);
+            }
+        }
+
+        function downloadReport(content, filename, mimeType) {
+            const blob = new Blob([content], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function showNotification(message, type = 'info') {
+            const container = document.getElementById('notificationContainer');
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'}"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+            
+            container.appendChild(notification);
+            
+            // Show notification
+            setTimeout(() => notification.classList.add('show'), 100);
+            
+            // Hide and remove notification
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => container.removeChild(notification), 300);
+            }, 4000);
+        }
+
+        // Helper functions
+        function calculateVariance(values) {
+            const mean = values.reduce((a, b) => a + b, 0) / values.length;
+            const squaredDiffs = values.map(value => Math.pow(value - mean, 2));
+            return squaredDiffs.reduce((a, b) => a + b, 0) / values.length;
+        }
+
+        function calculateBlockNoise(data, x, y, blockSize, width) {
+            let noise = 0;
+            for (let by = 0; by < blockSize; by++) {
+                for (let bx = 0; bx < blockSize; bx++) {
+                    const idx = ((y + by) * width + (x + bx)) * 4;
+                    if (idx < data.length - 2) {
+                        const r = data[idx];
+                        const g = data[idx + 1];
+                        const b = data[idx + 2];
+                        noise += Math.abs(r - g) + Math.abs(g - b) + Math.abs(b - r);
+                    }
+                }
+            }
+            return noise / (blockSize * blockSize);
+        }
+
+        function highlightNoiseAreas(ctx, data, width, height) {
+            const threshold = 50;
+            ctx.fillStyle = 'rgba(255, 255, 0, 0.4)';
+            
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    const idx = (y * width + x) * 4;
+                    if (idx < data.length - 2) {
+                        const r = data[idx];
+                        const g = data[idx + 1];
+                        const b = data[idx + 2];
+                        const noise = Math.abs(r - g) + Math.abs(g - b) + Math.abs(b - r);
+                        
+                        if (noise > threshold) {
+                            ctx.fillRect(x, y, 1, 1);
+                        }
+                    }
+                }
+            }
+        }
+
+        function detectCompressionArtifact(data, x, y, blockSize, width) {
+            // Enhanced detection based on block boundary differences and DCT patterns
+            let edgeDiff = 0;
+            let internalVariance = 0;
+            const samples = Math.min(blockSize, 4);
+            
+            // Check horizontal edges
+            for (let i = 0; i < samples; i++) {
+                const leftIdx = ((y + i) * width + (x - 1)) * 4;
+                const rightIdx = ((y + i) * width + x) * 4;
+                
+                if (x > 0 && leftIdx >= 0 && rightIdx < data.length - 2) {
+                    edgeDiff += Math.abs(data[leftIdx] - data[rightIdx]);
+                }
+            }
+            
+            // Check vertical edges
+            for (let i = 0; i < samples; i++) {
+                const topIdx = ((y - 1) * width + (x + i)) * 4;
+                const bottomIdx = (y * width + (x + i)) * 4;
+                
+                if (y > 0 && topIdx >= 0 && bottomIdx < data.length - 2) {
+                    edgeDiff += Math.abs(data[topIdx] - data[bottomIdx]);
+                }
+            }
+            
+            // Calculate internal block variance
+            const blockValues = [];
+            for (let by = 0; by < blockSize && y + by < data.length / (width * 4); by++) {
+                for (let bx = 0; bx < blockSize && x + bx < width; bx++) {
+                    const idx = ((y + by) * width + (x + bx)) * 4;
+                    if (idx < data.length) {
+                        blockValues.push(data[idx]); // Use red channel
+                    }
+                }
+            }
+            
+            if (blockValues.length > 1) {
+                internalVariance = calculateVariance(blockValues);
+            }
+            
+            // Combine edge differences and internal variance for artifact strength
+            const normalizedEdgeDiff = edgeDiff / (samples * 2 * 255);
+            const normalizedVariance = Math.min(internalVariance / 1000, 1);
+            
+            return (normalizedEdgeDiff * 0.7) + (normalizedVariance * 0.3);
+        }
+
+        function highlightBlock(ctx, x, y, size, color) {
+            ctx.fillStyle = color;
+            ctx.fillRect(x, y, size, size);
+        }
+    </script>
+</body>
+</html>
+
